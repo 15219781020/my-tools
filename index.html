@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>万能计算/换算工具箱</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* ===== 顶部 ===== */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    padding: 40px 20px 30px;
+    text-align: center;
+}
+header h1 { font-size: 1.8rem; margin-bottom: 8px; }
+header p { opacity: .85; font-size: .95rem; }
+
+/* ===== 工具切换 ===== */
+.tabs {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 15px 0;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.tab-btn {
+    padding: 10px 18px;
+    border: none;
+    background: #fff;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: .9rem;
+    font-weight: 500;
+    color: #636e72;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    transition: all .25s;
+}
+.tab-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,.1); }
+.tab-btn.active {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+}
+
+/* ===== 面板 ===== */
+.panel {
+    display: none;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 30px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.06);
+}
+.panel.active { display: block; animation: fadeIn .4s ease; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.panel h2 {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    color: #2d3436;
+    text-align: center;
+}
+
+/* ===== 表单 ===== */
+.field { margin-bottom: 16px; }
+.field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: .85rem;
+    color: #636e72;
+    font-weight: 500;
+}
+.field input, .field select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color .3s;
+    outline: none;
+}
+.field input:focus, .field select:focus { border-color: #667eea; }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,.4); }
+
+.result {
+    margin-top: 20px;
+    padding: 18px;
+    background: linear-gradient(135deg, #f5f7ff, #fdf2ff);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #2d3436;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.result .big { font-size: 1.5rem; font-weight: 700; color: #6c5ce7; }
+
+/* ===== 汇率 ===== */
+.rate-info { text-align:center; font-size:.8rem; color:#999; margin-top:8px; }
+
+/* ===== 响应式 ===== */
+@media (max-width:600px){
+    .row2 { grid-template-columns: 1fr; }
+    .panel { margin: 15px; padding: 20px; }
+    header h1 { font-size: 1.4rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>🧮 万能计算/换算工具箱</h1>
+    <p>日常计算 · 单位换算 · 健康指标 · 全部免费，无需注册</p>
+</header>
+
+<!-- 标签切换 -->
+<div class="tabs">
+    <button class="tab-btn active" data-tab="unit">📐 单位换算</button>
+    <button class="tab-btn" data-tab="loan">🏠 贷款计算</button>
+    <button class="tab-btn" data-tab="bmi">⚖️ BMI计算</button>
+    <button class="tab-btn" data-tab="time">⏰ 时间换算</button>
+    <button class="tab-btn" data-tab="currency">💱 汇率换算</button>
+</div>
+
+<!-- ========== 单位换算 ========== -->
+<div class="panel active" id="panel-unit">
+    <h2>📐 单位换算</h2>
+    <div class="field">
+        <label>换算类型</label>
+        <select id="unitType" onchange="updateUnitOptions()">
+            <option value="length">长度</option>
+            <option value="weight">重量</option>
+            <option value="temp">温度</option>
+            <option value="area">面积</option>
+            <option value="volume">体积</option>
+            <option value="speed">速度</option>
+        </select>
+    </div>
+    <div class="row2">
+        <div class="field">
+            <label>从</label>
+            <input type="number" id="unitFromVal" value="1" step="any" oninput="doUnit()">
+            <select id="unitFrom" onchange="doUnit()" style="margin-top:6px;"></select>
+        </div>
+        <div class="field">
+            <label>到</label>
+            <input type="number" id="unitToVal" readonly>
+            <select id="unitTo" onchange="doUnit()" style="margin-top:6px;"></select>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 贷款计算 ========== -->
+<div class="panel" id="panel-loan">
+    <h2>🏠 贷款计算器</h2>
+    <div class="field">
+        <label>贷款金额（万元）</label>
+        <input type="number" id="loanAmount" value="100" step="any">
+    </div>
+    <div class="field">
+        <label>年利率（%）</label>
+        <input type="number" id="loanRate" value="4.9" step="0.01">
+    </div>
+    <div class="field">
+        <label>贷款年限</label>
+        <input type="number" id="loanYears" value="30" min="1" max="40">
+    </div>
+    <button class="btn" onclick="calcLoan()">计算月供</button>
+    <div class="result" id="loanResult">输入信息后点击计算</div>
+</div>
+
+<!-- ========== BMI ========== -->
+<div class="panel" id="panel-bmi">
+    <h2>⚖️ BMI 健康计算器</h2>
+    <div class="field">
+        <label>身高（cm）</label>
+        <input type="number" id="bmiHeight" value="170" step="0.1">
+    </div>
+    <div class="field">
+        <label>体重（kg）</label>
+        <input type="number" id="bmiWeight" value="65" step="0.1">
+    </div>
+    <button class="btn" onclick="calcBMI()">计算 BMI</button>
+    <div class="result" id="bmiResult">输入信息后点击计算</div>
+</div>
+
+<!-- ========== 时间换算 ========== -->
+<div class="panel" id="panel-time">
+    <h2>⏰ 时间换算</h2>
+    <div class="row2">
+        <div class="field">
+            <label>秒</label>
+            <input type="number" id="tSec" value="0" oninput="timeFrom('sec')">
+        </div>
+        <div class="field">
+            <label>分钟</label>
+            <input type="number" id="tMin" value="0" oninput="timeFrom('min')">
+        </div>
+    </div>
+    <div class="row2">
+        <div class="field">
+            <label>小时</label>
+            <input type="number" id="tHour" value="0" oninput="timeFrom('hour')">
+        </div>
+        <div class="field">
+            <label>天</label>
+            <input type="number" id="tDay" value="0" oninput="timeFrom('day')">
+        </div>
+    </div>
+</div>
+
+<!-- ========== 汇率换算 ========== -->
+<div class="panel" id="panel-currency">
+    <h2>💱 汇率换算</h2>
+    <div class="row2">
+        <div class="field">
+            <label>金额</label>
+            <input type="number" id="curAmount" value="100" step="any" oninput="doCurrency()">
+        </div>
+        <div class="field">
+            <label>&nbsp;</label>
+            <select id="curFrom" onchange="doCurrency()">
+                <option value="CNY">🇨🇳 人民币 CNY</option>
+                <option value="USD">🇺🇸 美元 USD</option>
+                <option value="EUR">🇪🇺 欧元 EUR</option>
+                <option value="JPY">🇯🇵 日元 JPY</option>
+                <option value="HKD">🇭🇰 港币 HKD</option>
+                <option value="GBP">🇬🇧 英镑 GBP</option>
+            </select>
+        </div>
+    </div>
+    <div class="field">
+        <label>换算为</label>
+        <select id="curTo" onchange="doCurrency()">
+            <option value="USD">🇺🇸 美元 USD</option>
+            <option value="CNY">🇨🇳 人民币 CNY</option>
+            <option value="EUR">🇪🇺 欧元 EUR</option>
+            <option value="JPY">🇯🇵 日元 JPY</option>
+            <option value="HKD">🇭🇰 港币 HKD</option>
+            <option value="GBP">🇬🇧 英镑 GBP</option>
+        </select>
+    </div>
+    <div class="result" id="curResult">输入后自动换算</div>
+    <p class="rate-info">汇率为固定示例值，仅供参考，实际以银行实时汇率为准</p>
+</div>
+
+<footer style="text-align:center;padding:30px;color:#999;font-size:.85rem;margin-top:20px;">
+    © 2026 万能工具箱 · Made with ❤️
+</footer>
+
+<script>
+/* ============ 标签切换 ============ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+/* ============ 单位换算 ============ */
+const unitData = {
+    length: { name:'长度', units:{ '毫米':0.001,'厘米':0.01,'分米':0.1,'米':1,'千米':1000,'英寸':0.0254,'英尺':0.3048,'码':0.9144,'英里':1609.34 } },
+    weight: { name:'重量', units:{ '毫克':0.000001,'克':0.001,'千克':1,'吨':1000,'磅':0.453592,'盎司':0.0283495 } },
+    temp:   { name:'温度', units:{ '摄氏度':1,'华氏度':1,'开尔文':1 } },
+    area:   { name:'面积', units:{ '平方厘米':0.0001,'平方分米':0.01,'平方米':1,'公顷':10000,'平方公里':1000000,'亩':666.667,'英亩':4046.86,'平方英尺':0.092903 } },
+    volume: { name:'体积', units:{ '毫升':0.001,'升':1,'立方米':1000,'加仑(美)':3.78541,'品脱':0.568261 } },
+    speed:  { name:'速度', units:{ '米/秒':1,'千米/小时':0.277778,'英里/小时':0.44704,'节':0.514444,'马赫':340.3 } }
+};
+
+function updateUnitOptions() {
+    const type = document.getElementById('unitType').value;
+    const fromSel = document.getElementById('unitFrom');
+    const toSel = document.getElementById('unitTo');
+    const units = unitData[type].units;
+    fromSel.innerHTML = '';
+    toSel.innerHTML = '';
+    Object.keys(units).forEach(k => {
+        fromSel.add(new Option(k, k));
+        toSel.add(new Option(k, k));
+    });
+    // 默认选不同单位
+    if (Object.keys(units).length > 1) toSel.selectedIndex = 1;
+    doUnit();
+}
+
+function doUnit() {
+    const type = document.getElementById('unitType').value;
+    const fromUnit = document.getElementById('unitFrom').value;
+    const toUnit = document.getElementById('unitTo').value;
+    const val = parseFloat(document.getElementById('unitFromVal').value) || 0;
+
+    if (type === 'temp') {
+        // 温度特殊处理
+        let c;
+        if (fromUnit === '摄氏度') c = val;
+        else if (fromUnit === '华氏度') c = (val - 32) * 5/9;
+        else c = val - 273.15;
+        let result;
+        if (toUnit === '摄氏度') result = c;
+        else if (toUnit === '华氏度') result = c * 9/5 + 32;
+        else result = c + 273.15;
+        document.getElementById('unitToVal').value = result.toFixed(2);
+    } else {
+        const units = unitData[type].units;
+        const result = val * units[fromUnit] / units[toUnit];
+        document.getElementById('unitToVal').value = result.toFixed(6).replace(/\.?0+$/, '');
+    }
+}
+
+/* ============ 贷款计算 ============ */
+function calcLoan() {
+    const amount = parseFloat(document.getElementById('loanAmount').value) * 10000;
+    const annualRate = parseFloat(document.getElementById('loanRate').value) / 100;
+    const years = parseInt(document.getElementById('loanYears').value);
+
+    if (!amount || !annualRate || !years) {
+        document.getElementById('loanResult').innerHTML = '请填写完整信息';
+        return;
+    }
+
+    const monthlyRate = annualRate / 12;
+    const months = years * 12;
+    // 等额本息公式
+    const monthlyPay = amount * (monthlyRate * Math.pow(1+monthlyRate, months)) / (Math.pow(1+monthlyRate, months) - 1);
+    const totalPay = monthlyPay * months;
+    const totalInterest = totalPay - amount;
+
+    document.getElementById('loanResult').innerHTML = `
+        <div>
+            月供：<span class="big">¥${monthlyPay.toFixed(2)}</span><br>
+            <span style="font-size:.85rem;color:#888;">
+            还款总额：¥${totalPay.toFixed(2)} ｜ 总利息：¥${totalInterest.toFixed(2)}
+            </span>
+        </div>
+    `;
+}
+
+/* ============ BMI ============ */
+function calcBMI() {
+    const height = parseFloat(document.getElementById('bmiHeight').value) / 100;
+    const weight = parseFloat(document.getElementById('bmiWeight').value);
+
+    if (!height || !weight) {
+        document.getElementById('bmiResult').innerHTML = '请填写完整信息';
+        return;
+    }
+
+    const bmi = weight / (height * height);
+    let category, color, advice;
+    if (bmi < 18.5) { category = '偏瘦'; color = '#0984e3'; advice = '建议适当增加营养摄入，均衡饮食+适度力量训练'; }
+    else if (bmi < 24) { category = '正常'; color = '#00b894'; advice = '继续保持！体重在健康范围内 💪'; }
+    else if (bmi < 28) { category = '偏胖'; color = '#fdcb6e'; advice = '建议控制饮食+增加有氧运动'; }
+    else { category = '肥胖'; color = '#e17055'; advice = '建议关注饮食结构和运动，必要时咨询医生'; }
+
+    document.getElementById('bmiResult').innerHTML = `
+        <div>
+            BMI = <span class="big" style="color:${color}">${bmi.toFixed(1)}</span>
+            <span style="color:${color};font-weight:600;">（${category}）</span><br>
+            <span style="font-size:.85rem;color:#888;">${advice}</span>
+        </div>
+    `;
+}
+
+/* ============ 时间换算 ============ */
+function timeFrom(src) {
+    const factors = { sec:1, min:60, hour:3600, day:86400 };
+    const totalSec = parseFloat(document.getElementById('t' + capitalize(src)).value || 0) * factors[src];
+
+    if (src !== 'sec') document.getElementById('tSec').value = totalSec.toFixed(4);
+    if (src !== 'min') document.getElementById('tMin').value = (totalSec/60).toFixed(6);
+    if (src !== 'hour') document.getElementById('tHour').value = (totalSec/3600).toFixed(6);
+    if (src !== 'day') document.getElementById('tDay').value = (totalSec/86400).toFixed(6);
+}
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* ============ 汇率换算 ============ */
+const rates = { CNY:1, USD:7.20, EUR:7.80, JPY:0.048, HKD:0.92, GBP:9.10 };
+
+function doCurrency() {
+    const amount = parseFloat(document.getElementById('curAmount').value) || 0;
+    const from = document.getElementById('curFrom').value;
+    const to = document.getElementById('curTo').value;
+
+    // 统一转成 CNY 再转目标
+    const cny = amount * rates[from];
+    const result = cny / rates[to];
+    const rate = rates[from] / rates[to];
+
+    document.getElementById('curResult').innerHTML = `
+        <div>
+            <span class="big">${result.toFixed(2)}</span> ${to}<br>
+            <span style="font-size:.85rem;color:#888;">1 ${from} = ${rate.toFixed(4)} ${to}</span>
+        </div>
+    `;
+}
+
+/* 初始化 */
+updateUnitOptions();
+doCurrency();
+</script>
+
+</body>
+</html>
